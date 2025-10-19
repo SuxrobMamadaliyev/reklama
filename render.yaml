@@ -1,8 +1,11 @@
 services:
   - type: web
     name: telegram-bot
-    env: node
-    buildCommand: chmod +x start.sh
+    env: python  # Changed from node to python
+    buildCommand: |
+      pip install -r requirements.txt
+      npm install
+      chmod +x start.sh
     startCommand: ./start.sh
     envVars:
       - key: PORT
