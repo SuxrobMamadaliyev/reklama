@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e  # Exit on error
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -6,14 +7,32 @@ pip install -r requirements.txt
 # Install Node.js dependencies
 npm install
 
-# Start the Node.js server in the background
-node server.js &
+# Function to handle termination
+cleanup() {
+    echo "Shutting down processes..."
+    kill -9 $NODE_PID $PYTHON_PID 2>/dev/null || true
+    exit 0
+}
 
-# Store the Node.js server's process ID
+# Set up trap to clean up processes on exit
+trap cleanup SIGINT SIGTERM
+
+# Start the Node.js server in the background
+echo "Starting Node.js server..."
+node server.js &
 NODE_PID=$!
 
-# Start the Python bot
-python bot.py
+# Give Node.js server a moment to start
+sleep 2
 
-# If the Python bot exits, stop the Node.js server
-kill $NODE_PID
+# Start the Python bot in the background
+echo "Starting Python bot..."
+python bot.py &
+PYTHON_PID=$!
+
+# Keep the script running and wait for processes
+echo "All services are running. Press Ctrl+C to stop."
+wait $NODE_PID $PYTHON_PID
+
+# Cleanup if we get here
+cleanup
